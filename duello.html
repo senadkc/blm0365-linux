@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ne Olur? Eşli Terminal Düellosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Yerleşim: üstte skor şeridi, ortada tek kart, altta eylem düğmeleri. Tek sütun, en fazla 760px. */
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1d2230;
+  --muted: #5d6475;
+  --line: #d9dcd4;
+  --accent: #b5541c;
+  --term: #1f2433;
+  --term-ink: #e9ecf2;
+  --pa: #0f7c74;
+  --pb: #8a4fbf;
+  --ok: #2d7a3a;
+  --ok-bg: #e6f3e7;
+  --bad: #b3332b;
+  --bad-bg: #fbeceb;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171f; --surface: #1c2029; --ink: #e8eaef; --muted: #a2a8b6; --line: #2f3542;
+    --accent: #f0905a; --term: #0e1118; --term-ink: #e9ecf2; --pa: #3fc2b6; --pb: #c08cf0;
+    --ok: #7fd08b; --ok-bg: #1d3323; --bad: #f08a83; --bad-bg: #3a2120; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171f; --surface: #1c2029; --ink: #e8eaef; --muted: #a2a8b6; --line: #2f3542;
+  --accent: #f0905a; --term: #0e1118; --term-ink: #e9ecf2; --pa: #3fc2b6; --pb: #c08cf0;
+  --ok: #7fd08b; --ok-bg: #1d3323; --bad: #f08a83; --bad-bg: #3a2120; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 1.6rem; font-weight: 700; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+p { margin: 0; }
+code, pre, .mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.term { background: var(--term); color: var(--term-ink); border-radius: 8px; padding: 14px 16px; font-family: var(--font-mono); font-size: .92rem; white-space: pre-wrap; word-break: break-word; overflow-x: auto; margin: 0; }
+.term .p { color: #8fd3a8; user-select: none; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
+label { font-size: .9rem; font-weight: 500; display: flex; flex-direction: column; gap: 6px; }
+input[type="text"] { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 8px; padding: 11px 18px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.small { padding: 6px 12px; font-size: .85rem; }
+
+/* Skor şeridi */
+.scores { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; }
+.player { border: 2px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--surface); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.player .name { font-weight: 600; overflow-wrap: anywhere; }
+.player .pts { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.player.a.active { border-color: var(--pa); box-shadow: inset 0 0 0 1px var(--pa); }
+.player.b.active { border-color: var(--pb); box-shadow: inset 0 0 0 1px var(--pb); }
+.player.a .pts { color: var(--pa); } .player.b .pts { color: var(--pb); }
+.turnbadge { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.progress { display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; min-width: 74px; }
+.steps { display: flex; gap: 4px; flex-wrap: wrap; }
+.step { width: 18px; height: 6px; border-radius: 3px; background: var(--line); }
+.step.done { background: var(--muted); }
+.step.now { background: var(--accent); }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: .78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip.kind { border-color: var(--accent); color: var(--accent); }
+.roles { font-size: .92rem; padding: 10px 12px; border-left: 4px solid var(--line); background: var(--bg); border-radius: 0 6px 6px 0; }
+.roles b.a { color: var(--pa); } .roles b.b { color: var(--pb); }
+
+.options { display: grid; gap: 8px; }
+.opt { text-align: left; font-family: var(--font-mono); font-weight: 400; font-size: .92rem; display: flex; gap: 10px; align-items: flex-start; white-space: pre-wrap; }
+.opt .k { font-family: var(--font-body); font-weight: 700; color: var(--muted); min-width: 1.2em; }
+.opt:disabled { opacity: .55; cursor: default; }
+.opt.right:disabled, .opt.wrong:disabled { opacity: 1; }
+.opt.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opt.right { border-color: var(--ok); background: var(--ok-bg); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+
+.verdict { border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.verdict.ok { background: var(--ok-bg); border: 1px solid var(--ok); }
+.verdict.bad { background: var(--bad-bg); border: 1px solid var(--bad); }
+.verdict.neutral { background: var(--bg); border: 1px solid var(--line); }
+.verdict h3 { font-size: 1rem; }
+.verdict.ok h3 { color: var(--ok); } .verdict.bad h3 { color: var(--bad); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.big { font-size: 2.2rem; font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hidden { display: none !important; }
+ol.rules { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .panel { transition: border-color .2s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- BAŞLANGIÇ -->
+  <section id="start" class="panel" aria-labelledby="t-start">
+    <span class="eyebrow">BLM0365 · Genel tekrar · 2 kişilik grup</span>
+    <h1 id="t-start">Ne Olur? Eşli Terminal Düellosu</h1>
+    <p class="muted">5 konu, 15 kart, yaklaşık 20 dakika. Bir bilgisayarda bu sayfa, diğerinde terminal açık olsun.</p>
+    <ol class="rules">
+      <li>Sırası gelen kişi kartı <b>cevaplar</b>, diğeri kendi terminalinde <b>çalıştırıp kontrol eder</b>. Her kartta roller değişir.</li>
+      <li><b>Tahmin</b> kartı: komutu çalıştırmadan çıktıyı seç. Doğruysa 2 puan.</li>
+      <li><b>Komut yaz</b> kartı: istenen komutu terminalde yaz ve çalıştır. Arkadaşın çıktıya bakıp karar verir. Doğruysa 3 puan.</li>
+      <li>Sonunda skorunuzu ve en çok zorlandığınız konuyu asistana söyleyin.</li>
+    </ol>
+    <div>
+      <p style="margin-bottom:8px"><b>Önce ikiniz de terminalde şunu çalıştırın:</b></p>
+<pre class="term" id="prep"><span class="p">$ </span>mkdir -p ~/duello && cd ~/duello
+<span class="p">$ </span>printf 'elma\nArmut\nkiraz\nelma\nmuz\nKivi\nportakal\nelma\nmuz\n' &gt; meyve.txt
+<span class="p">$ </span>printf 'ad,bolum,not\nAli,BLM,75\nAyse,EEM,90\nCan,BLM,45\nDeniz,BLM,90\n' &gt; ogr.csv</pre>
+      <div class="row" style="margin-top:8px"><button class="small" id="copyPrep" type="button">Komutları kopyala</button><span class="muted" id="copyMsg" aria-live="polite"></span></div>
+    </div>
+    <div class="grid2">
+      <label for="nameA">1. kişi<input type="text" id="nameA" value="Oyuncu 1" maxlength="24" autocomplete="off"></label>
+      <label for="nameB">2. kişi<input type="text" id="nameB" value="Oyuncu 2" maxlength="24" autocomplete="off"></label>
+    </div>
+    <div class="actions"><button class="primary" id="go" type="button">Başla</button></div>
+  </section>
+
+  <!-- OYUN -->
+  <section id="game" class="hidden" aria-live="polite">
+    <div class="scores">
+      <div class="player a" id="pA"><div><div class="turnbadge" id="tA"></div><div class="name" id="nA"></div></div><div class="pts" id="sA">0</div></div>
+      <div class="progress"><div id="progText"></div><div class="steps" id="steps"></div></div>
+      <div class="player b" id="pB"><div><div class="turnbadge" id="tB"></div><div class="name" id="nB"></div></div><div class="pts" id="sB">0</div></div>
+    </div>
+
+    <article class="panel" id="card" style="margin-top:16px">
+      <div class="chips"><span class="chip" id="cTopic"></span><span class="chip kind" id="cKind"></span></div>
+      <p class="roles" id="roles"></p>
+      <h2 id="cQ"></h2>
+      <pre class="term" id="cCmd"></pre>
+      <div class="options" id="opts"></div>
+      <div id="verdict" class="verdict hidden"></div>
+      <div class="actions" id="acts"></div>
+    </article>
+  </section>
+
+  <!-- SONUÇ -->
+  <section id="end" class="panel hidden" aria-labelledby="t-end">
+    <span class="eyebrow">Düello bitti</span>
+    <h1 id="t-end"></h1>
+    <div class="grid2" id="finalScores"></div>
+    <div>
+      <h2 style="margin-bottom:8px">Konulara göre</h2>
+      <div style="overflow-x:auto"><table id="byTopic"></table></div>
+    </div>
+    <p id="weak" class="roles"></p>
+    <div class="actions"><button id="again" type="button">Yeniden oyna</button></div>
+  </section>
+
+</div>
+<script>
+const TOPICS = ["Yollar ve dosyalar", "Yönlendirme ve borular", "Joker ve metin", "İzinler ve linkler", "Süreç ve arşiv"];
+
+// t: konu, k: "tahmin" | "yaz". Tüm çıktılar Linux terminalinde denendi. Çalışma dizini: ~/duello
+const CARDS = [
+  { t:0, k:"tahmin", q:"pwd ne yazar?",
+    cmd:"mkdir -p a/b\ncd a/b\ncd ../..\npwd",
+    opts:["~/duello/a", "/home/<kullanıcı>/duello", "/home/<kullanıcı>", "Hata: a/b yok"], a:1,
+    why:"mkdir -p iki dizini birden açar. a/b içinden iki kez yukarı çıkınca başladığımız ~/duello'ya döneriz. pwd ~ yerine tam yolu yazar." },
+  { t:0, k:"tahmin", q:"Son komut ne yazar?",
+    cmd:"mkdir yedek\ncp meyve.txt yedek\ncp meyve.txt yedek/meyve.txt\nls yedek",
+    opts:["meyve.txt  meyve.txt", "cp: 'yedek/meyve.txt' already exists", "meyve.txt", "meyve.txt  meyve(1).txt"], a:2,
+    why:"İkinci cp ilk kopyanın üzerine sessizce yazar. Linux sormaz, kopya numarası da vermez. Sormasını isterseniz cp -i." },
+  { t:0, k:"yaz", q:"Tek satırda: rapor/2026/kasim dizinlerini oluşturun ve ogr.csv'yi kasim'in içine liste.csv adıyla kopyalayın.",
+    check:"ls rapor/2026/kasim   →   liste.csv",
+    sol:["mkdir -p rapor/2026/kasim && cp ogr.csv rapor/2026/kasim/liste.csv"],
+    why:"-p olmadan mkdir hata verir, çünkü rapor ve 2026 yok. && ilk komut başarılı olursa kopyalamayı yapar. Hedefte yeni ad yazmak kopyalarken adı da değiştirir." },
+
+  { t:1, k:"tahmin", q:"cat sayi.txt ne yazar?",
+    cmd:"grep -c muz meyve.txt > sayi.txt\ncat sayi.txt",
+    opts:["muz\nmuz", "2", "sayi.txt boş", "2 meyve.txt"], a:1,
+    why:"-c eşleşen satırları sayar. Tek dosyaya bakıldığı için grep dosya adını yazmaz, yalnızca sayı dosyaya gider." },
+  { t:1, k:"tahmin", q:"Ekranda ne görürsünüz?",
+    cmd:"ls meyve.txt yok.txt 2> hata.txt | wc -l",
+    opts:["2", "Hata mesajı ve 1", "1", "0"], a:2,
+    why:"Hata (2. kanal) hata.txt'ye gider, boruya girmez. Boruya yalnızca 'meyve.txt' satırı girer, wc -l 1 sayar. cat hata.txt ile hatayı görebilirsiniz." },
+  { t:1, k:"yaz", q:"meyve.txt'de büyük ya da küçük 'k' harfi geçen satırların sayısını tek komutla bulun.",
+    check:"Doğru çıktı: 3",
+    sol:["grep -ic k meyve.txt", "grep -i k meyve.txt | wc -l"],
+    why:"kiraz, Kivi ve portakal. portakal'ı unutup 2 diyen çok olur: grep satırın her yerine bakar, yalnızca başına değil. Başında olsun isteseydik '^k' yazardık." },
+
+  { t:2, k:"tahmin", q:"echo ne yazar? (dizinde: araba bilgisayar Bardak cetvel defter dosya1.txt dosya2.txt dosya10.txt not.md)",
+    cmd:"echo dosya[12].txt",
+    opts:["dosya1.txt dosya2.txt", "dosya1.txt dosya2.txt dosya10.txt", "dosya[12].txt", "dosya12.txt"], a:0,
+    why:"[12] tek bir karakter yerine geçer: 1 ya da 2. dosya10 iki karakter gerektirir, eşleşmez. Bu dosyaları denemek için: mkdir j && cd j && touch araba bilgisayar Bardak cetvel defter dosya1.txt dosya2.txt dosya10.txt not.md" },
+  { t:2, k:"tahmin", q:"Sonuç kaç?",
+    cmd:"awk -F, 'NR>1 && $2==\"BLM\" {print $1}' ogr.csv | wc -l",
+    opts:["4", "3", "1", "0"], a:1,
+    why:"NR>1 başlığı atlar. Bölümü BLM olanlar Ali, Can, Deniz: 3 kişi." },
+  { t:2, k:"yaz", q:"ogr.csv'den notu 90 olan öğrencilerin yalnızca adlarını yazdırın.",
+    check:"Doğru çıktı: Ayse ve Deniz (alt alta)",
+    sol:["awk -F, '$3==90 {print $1}' ogr.csv", "grep ',90$' ogr.csv | cut -d, -f1"],
+    why:"awk'ta -F, şart, yoksa satır bölünmez. grep çözümünde $ önemli: ',90' tek başına '...,905' gibi satırları da yakalardı." },
+
+  { t:3, k:"tahmin", q:"ls -l f satırı nasıl başlar?",
+    cmd:"touch f\nchmod 600 f\nchmod g+r,o+r f\nls -l f",
+    opts:["-rw-------", "-rw-r--r--", "----r--r--", "-rwxr--r--"], a:1,
+    why:"600 = rw- --- ---. Sembolik chmod mevcut izne ekleme yapar, sıfırlamaz. Grup ve diğerlerine r eklenince 644 olur." },
+  { t:3, k:"tahmin", q:"cat s ne yazar?",
+    cmd:"echo bir > k\nln -s k s\nrm k\necho iki > k\ncat s",
+    opts:["bir", "iki", "No such file or directory", "s -> k"], a:1,
+    why:"Soft link içeriği değil adı tutar. k silinince link kırılır, aynı adla yeni bir k oluşunca link yine çalışır ve yeni içeriği gösterir. Hard link olsaydı 'bir' yazardı." },
+  { t:3, k:"yaz", q:"notlar.txt için: sahip okuyup yazabilsin, grup yalnızca okuyabilsin, diğerleri hiçbir şey yapamasın. Önce dosyayı oluşturun.",
+    check:"ls -l notlar.txt   →   -rw-r-----",
+    sol:["touch notlar.txt && chmod 640 notlar.txt", "chmod u=rw,g=r,o= notlar.txt"],
+    why:"6=rw, 4=r, 0=yok. Sembolik yazımda = mevcut izni silip yenisini koyar. o= diğerlerinin her iznini kaldırır." },
+
+  { t:4, k:"tahmin", q:"Son komut ne yazar?",
+    cmd:"sleep 50 &\nsleep 60 &\njobs | wc -l",
+    opts:["0", "1", "2", "Komut satırı 50 saniye kilitlenir"], a:2,
+    why:"& ile iki iş de arka plana gider, komut satırı hemen döner. jobs iki satır listeler. Temizlemek için: kill %1 %2" },
+  { t:4, k:"tahmin", q:"Son komut ne yazar?",
+    cmd:"tar -czf yedek.tar.gz meyve.txt ogr.csv\nrm meyve.txt\ntar -xzf yedek.tar.gz\nls meyve.txt",
+    opts:["No such file or directory", "meyve.txt", "yedek.tar.gz", "meyve.txt.gz"], a:1,
+    why:"tar -c dosyaların kopyasını arşive koyar. rm sonrası -x ile arşivden açınca meyve.txt geri gelir. Yedeklemenin bütün mantığı bu." },
+  { t:4, k:"yaz", q:"Arka planda sleep 500 başlatın, PID'ini bulun ve o PID ile sonlandırın.",
+    check:"Son durumda jobs boş olmalı ya da Terminated yazmalı",
+    sol:["sleep 500 &\npgrep sleep        # ya da: jobs -l, ps aux | grep sleep\nkill <PID>"],
+    why:"& çıktısındaki [1] iş numarası, yanındaki sayı PID'dir. kill %1 de çalışır ama görev PID ile sonlandırmak. pkill sleep ise tüm sleep süreçlerini kapatır." }
+];
+
+const S = { names:["",""], score:[0,0], i:0, picked:null, done:false, log:[] };
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const pts = c => c.k === "tahmin" ? 2 : 3;
+
+$("copyPrep").addEventListener("click", async () => {
+  const txt = $("prep").innerText.split("\n").map(l => l.replace(/^\$ /,"")).join("\n");
+  try { await navigator.clipboard.writeText(txt); $("copyMsg").textContent = "Kopyalandı."; }
+  catch (e) { $("copyMsg").textContent = "Kopyalanamadı, elle seçip kopyalayın."; }
+});
+
+$("go").addEventListener("click", () => {
+  S.names = [$("nameA").value.trim() || "Oyuncu 1", $("nameB").value.trim() || "Oyuncu 2"];
+  S.score = [0,0]; S.i = 0; S.log = [];
+  $("nA").textContent = S.names[0]; $("nB").textContent = S.names[1];
+  $("start").classList.add("hidden"); $("end").classList.add("hidden"); $("game").classList.remove("hidden");
+  render();
+});
+$("again").addEventListener("click", () => { $("end").classList.add("hidden"); $("start").classList.remove("hidden"); });
+
+function render() {
+  const c = CARDS[S.i], p = S.i % 2, o = 1 - p;
+  S.picked = null; S.done = false;
+  $("sA").textContent = S.score[0]; $("sB").textContent = S.score[1];
+  $("pA").classList.toggle("active", p === 0); $("pB").classList.toggle("active", p === 1);
+  $("tA").textContent = p === 0 ? "Cevaplıyor" : "Kontrol ediyor";
+  $("tB").textContent = p === 1 ? "Cevaplıyor" : "Kontrol ediyor";
+  $("progText").textContent = `Kart ${S.i + 1} / ${CARDS.length}`;
+  $("steps").innerHTML = CARDS.map((_, j) => `<span class="step ${j < S.i ? "done" : j === S.i ? "now" : ""}"></span>`).join("");
+  $("cTopic").textContent = `${c.t + 1}. ${TOPICS[c.t]}`;
+  $("cKind").textContent = c.k === "tahmin" ? "Tahmin · 2 puan" : "Komut yaz · 3 puan";
+  const cls = ["a","b"];
+  $("roles").innerHTML = c.k === "tahmin"
+    ? `<b class="${cls[p]}">${esc(S.names[p])}</b> komutu çalıştırmadan cevabı seçer. <b class="${cls[o]}">${esc(S.names[o])}</b> seçim kilitlenince kendi terminalinde çalıştırıp doğrular.`
+    : `<b class="${cls[p]}">${esc(S.names[p])}</b> komutu terminalde yazıp çalıştırır. <b class="${cls[o]}">${esc(S.names[o])}</b> çıktıya bakıp karar verir.`;
+  $("cQ").textContent = c.q;
+  const cmdEl = $("cCmd");
+  if (c.k === "tahmin") {
+    cmdEl.classList.remove("hidden");
+    cmdEl.innerHTML = c.cmd.split("\n").map(l => `<span class="p">$ </span>${esc(l)}`).join("\n");
+  } else {
+    cmdEl.classList.remove("hidden");
+    cmdEl.innerHTML = `<span class="p"># </span>Kontrol: ${esc(c.check)}`;
+  }
+  $("verdict").className = "verdict hidden"; $("verdict").innerHTML = "";
+  const opts = $("opts"); opts.innerHTML = "";
+  if (c.k === "tahmin") {
+    c.opts.forEach((txt, j) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "opt"; b.id = `opt${j}`;
+      b.innerHTML = `<span class="k">${"ABCD"[j]}</span><span>${esc(txt)}</span>`;
+      b.addEventListener("click", () => { if (S.done) return; S.picked = j; [...opts.children].forEach((x, k) => x.classList.toggle("sel", k === j)); $("lock").disabled = false; });
+      opts.appendChild(b);
+    });
+    setActs([{ id:"lock", label:"Cevabı kilitle", primary:true, disabled:true, fn: lockGuess }]);
+  } else {
+    setActs([{ id:"show", label:"Çalıştırdım, çözümü göster", primary:true, fn: showSolution }]);
+  }
+}
+
+function setActs(list) {
+  const a = $("acts"); a.innerHTML = "";
+  list.forEach(x => {
+    const b = document.createElement("button");
+    b.type = "button"; b.id = x.id; b.textContent = x.label;
+    if (x.primary) b.className = "primary";
+    if (x.disabled) b.disabled = true;
+    b.addEventListener("click", x.fn); a.appendChild(b);
+  });
+}
+
+function lockGuess() {
+  const c = CARDS[S.i], p = S.i % 2, ok = S.picked === c.a;
+  S.done = true;
+  [...$("opts").children].forEach((x, k) => { x.disabled = true; if (k === c.a) x.classList.add("right"); else if (k === S.picked) x.classList.add("wrong"); });
+  record(ok);
+  const v = $("verdict");
+  v.className = "verdict " + (ok ? "ok" : "bad");
+  v.innerHTML = `<h3>${ok ? `Doğru, ${esc(S.names[p])} +2` : `Yanlış. Doğru cevap ${"ABCD"[c.a]}`}</h3><p>${esc(c.why)}</p><p class="muted">${esc(S.names[1 - p])}: şimdi terminalde çalıştırıp çıktıyı birlikte görün.</p>`;
+  setActs([{ id:"next", label: S.i === CARDS.length - 1 ? "Sonuçları gör" : "Sonraki kart", primary:true, fn: next }]);
+}
+
+function showSolution() {
+  const c = CARDS[S.i], p = S.i % 2, o = 1 - p;
+  const v = $("verdict");
+  v.className = "verdict neutral";
+  v.innerHTML = `<h3>Örnek çözüm${c.sol.length > 1 ? "ler" : ""}</h3>${c.sol.map(s => `<pre class="term">${s.split("\n").map(l => `<span class="p">$ </span>${esc(l)}`).join("\n")}</pre>`).join("")}<p>${esc(c.why)}</p><p><b>${esc(S.names[o])}</b>, ${esc(S.names[p])} doğru çıktıyı aldı mı? Farklı ama çalışan bir komut da doğru sayılır.</p>`;
+  setActs([
+    { id:"no", label:"Yazamadı", fn: () => judge(false) },
+    { id:"yes", label:"Doğru yazdı +3", primary:true, fn: () => judge(true) }
+  ]);
+}
+
+function judge(ok) {
+  record(ok);
+  const v = $("verdict");
+  v.classList.remove("neutral"); v.classList.add(ok ? "ok" : "bad");
+  const h = v.querySelector("h3"); h.textContent = ok ? `Doğru, ${S.names[S.i % 2]} +3` : "Bu sefer olmadı. Çözümü bir kez de kendiniz yazın.";
+  setActs([{ id:"next", label: S.i === CARDS.length - 1 ? "Sonuçları gör" : "Sonraki kart", primary:true, fn: next }]);
+}
+
+function record(ok) {
+  const c = CARDS[S.i], p = S.i % 2;
+  if (ok) S.score[p] += pts(c);
+  S.log.push({ t:c.t, p, ok, max:pts(c) });
+  $("sA").textContent = S.score[0]; $("sB").textContent = S.score[1];
+}
+
+function next() {
+  if (S.i < CARDS.length - 1) { S.i++; render(); window.scrollTo({ top:0 }); }
+  else finish();
+}
+
+function finish() {
+  $("game").classList.add("hidden"); $("end").classList.remove("hidden");
+  const [a, b] = S.score;
+  $("t-end").textContent = a === b ? `Berabere: ${a} – ${b}` : `${a > b ? S.names[0] : S.names[1]} kazandı`;
+  const maxEach = [0,1].map(p => S.log.filter(l => l.p === p).reduce((s, l) => s + l.max, 0));
+  $("finalScores").innerHTML = [0,1].map(p => `<div class="player ${p ? "b" : "a"}"><div class="name">${esc(S.names[p])}</div><div class="big" style="color:var(--p${p ? "b" : "a"})">${S.score[p]}<span class="muted" style="font-size:1rem"> / ${maxEach[p]}</span></div></div>`).join("");
+  let rows = `<tr><th>Konu</th><th class="n">Doğru kart</th><th class="n">Puan</th></tr>`;
+  const miss = [];
+  TOPICS.forEach((name, t) => {
+    const L = S.log.filter(l => l.t === t), okN = L.filter(l => l.ok).length;
+    const got = L.filter(l => l.ok).reduce((s, l) => s + l.max, 0), max = L.reduce((s, l) => s + l.max, 0);
+    rows += `<tr><td>${t + 1}. ${name}</td><td class="n">${okN} / ${L.length}</td><td class="n">${got} / ${max}</td></tr>`;
+    miss.push({ name, lost: max - got });
+  });
+  $("byTopic").innerHTML = rows;
+  const worst = miss.filter(m => m.lost > 0).sort((x, y) => y.lost - x.lost);
+  $("weak").innerHTML = worst.length
+    ? `Asistana söyleyin: <b>${a} – ${b}</b>. En çok puan kaybettiğiniz konu: <b>${esc(worst[0].name)}</b>.`
+    : `Asistana söyleyin: <b>${a} – ${b}</b>. Hiç puan kaybetmediniz.`;
+}
+</script>
+</body>
+</html>
