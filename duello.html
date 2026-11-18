@@ -124,7 +124,7 @@ ol.rules { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column
       <li>Sırası gelen kişi kartı <b>cevaplar</b>, diğeri kendi terminalinde <b>çalıştırıp kontrol eder</b>. Her kartta roller değişir.</li>
       <li><b>Tahmin</b> kartı: komutu çalıştırmadan çıktıyı seç. Doğruysa 2 puan.</li>
       <li><b>Komut yaz</b> kartı: istenen komutu terminalde yaz ve çalıştır. Arkadaşın çıktıya bakıp karar verir. Doğruysa 3 puan.</li>
-      <li>Sonunda skorunuzu ve en çok zorlandığınız konuyu asistana söyleyin.</li>
+      <li>Sonunda skorunuzu ve en çok puan kaybettiğiniz konuyu görürsünüz.</li>
     </ol>
     <div>
       <p style="margin-bottom:8px"><b>Önce ikiniz de terminalde şunu çalıştırın:</b></p>
@@ -374,8 +374,8 @@ function finish() {
   $("byTopic").innerHTML = rows;
   const worst = miss.filter(m => m.lost > 0).sort((x, y) => y.lost - x.lost);
   $("weak").innerHTML = worst.length
-    ? `Asistana söyleyin: <b>${a} – ${b}</b>. En çok puan kaybettiğiniz konu: <b>${esc(worst[0].name)}</b>.`
-    : `Asistana söyleyin: <b>${a} – ${b}</b>. Hiç puan kaybetmediniz.`;
+    ? `Skor: <b>${a} – ${b}</b>. En çok puan kaybettiğiniz konu: <b>${esc(worst[0].name)}</b>.`
+    : `Skor: <b>${a} – ${b}</b>. Hiç puan kaybetmediniz.`;
 }
 </script>
 </body>
