@@ -6,7 +6,7 @@ Bursa Teknik Üniversitesi Bilgisayar Mühendisliği, 2026-2027 Güz yarıyılı
 
 | Etkinlik | Konu | Link |
 | --- | --- | --- |
-| Ne Olur? Eşli Terminal Düellosu | Genel tekrar: yollar, yönlendirme ve borular, joker karakterler ve metin işleme, izinler ve linkler, süreçler ve arşiv | [duello.html](duello.html) |
+| Ne Olur? Eşli Terminal Düellosu | Genel tekrar (3–6. haftalar): yollar, yönlendirme ve borular, joker karakterler ve metin işleme, izinler ve linkler | [duello.html](duello.html) |
 
 Sayfalar GitHub Pages üzerinden yayınlanır, hesap gerektirmez. İsterseniz dosyayı indirip tarayıcıda doğrudan da açabilirsiniz.
 

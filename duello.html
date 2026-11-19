@@ -119,7 +119,7 @@ ol.rules { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column
   <section id="start" class="panel" aria-labelledby="t-start">
     <span class="eyebrow">BLM0365 · Genel tekrar · 2 kişilik grup</span>
     <h1 id="t-start">Ne Olur? Eşli Terminal Düellosu</h1>
-    <p class="muted">5 konu, 15 kart, yaklaşık 20 dakika. Bir bilgisayarda bu sayfa, diğerinde terminal açık olsun.</p>
+    <p class="muted">4 konu, 12 kart, yaklaşık 15 dakika. Bir bilgisayarda bu sayfa, diğerinde terminal açık olsun.</p>
     <ol class="rules">
       <li>Sırası gelen kişi kartı <b>cevaplar</b>, diğeri kendi terminalinde <b>çalıştırıp kontrol eder</b>. Her kartta roller değişir.</li>
       <li><b>Tahmin</b> kartı: komutu çalıştırmadan çıktıyı seç. Doğruysa 2 puan.</li>
@@ -174,7 +174,7 @@ ol.rules { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column
 
 </div>
 <script>
-const TOPICS = ["Yollar ve dosyalar", "Yönlendirme ve borular", "Joker ve metin", "İzinler ve linkler", "Süreç ve arşiv"];
+const TOPICS = ["Yollar ve dosyalar", "Yönlendirme ve borular", "Joker ve metin", "İzinler ve linkler"];
 
 // t: konu, k: "tahmin" | "yaz". Tüm çıktılar Linux terminalinde denendi. Çalışma dizini: ~/duello
 const CARDS = [
@@ -209,13 +209,13 @@ const CARDS = [
     opts:["dosya1.txt dosya2.txt", "dosya1.txt dosya2.txt dosya10.txt", "dosya[12].txt", "dosya12.txt"], a:0,
     why:"[12] tek bir karakter yerine geçer: 1 ya da 2. dosya10 iki karakter gerektirir, eşleşmez. Bu dosyaları denemek için: mkdir j && cd j && touch araba bilgisayar Bardak cetvel defter dosya1.txt dosya2.txt dosya10.txt not.md" },
   { t:2, k:"tahmin", q:"Sonuç kaç?",
-    cmd:"awk -F, 'NR>1 && $2==\"BLM\" {print $1}' ogr.csv | wc -l",
-    opts:["4", "3", "1", "0"], a:1,
-    why:"NR>1 başlığı atlar. Bölümü BLM olanlar Ali, Can, Deniz: 3 kişi." },
+    cmd:"grep -E '^(elma|muz)$' meyve.txt | wc -l",
+    opts:["2", "3", "5", "9"], a:2,
+    why:"| düzenli ifadede 'ya da' demek; ^ ve $ satırın tamamının eşleşmesini ister. elma 3 kez, muz 2 kez geçiyor: toplam 5 satır." },
   { t:2, k:"yaz", q:"ogr.csv'den notu 90 olan öğrencilerin yalnızca adlarını yazdırın.",
     check:"Doğru çıktı: Ayse ve Deniz (alt alta)",
-    sol:["awk -F, '$3==90 {print $1}' ogr.csv", "grep ',90$' ogr.csv | cut -d, -f1"],
-    why:"awk'ta -F, şart, yoksa satır bölünmez. grep çözümünde $ önemli: ',90' tek başına '...,905' gibi satırları da yakalardı." },
+    sol:["grep ',90$' ogr.csv | cut -d, -f1"],
+    why:"$ satır sonu demek. Yalnızca ',90' yazılsaydı '...,905' gibi satırlar da gelirdi. cut virgülden bölüp 1. alanı, yani adı alır." },
 
   { t:3, k:"tahmin", q:"ls -l f satırı nasıl başlar?",
     cmd:"touch f\nchmod 600 f\nchmod g+r,o+r f\nls -l f",
@@ -228,20 +228,7 @@ const CARDS = [
   { t:3, k:"yaz", q:"notlar.txt için: sahip okuyup yazabilsin, grup yalnızca okuyabilsin, diğerleri hiçbir şey yapamasın. Önce dosyayı oluşturun.",
     check:"ls -l notlar.txt   →   -rw-r-----",
     sol:["touch notlar.txt && chmod 640 notlar.txt", "chmod u=rw,g=r,o= notlar.txt"],
-    why:"6=rw, 4=r, 0=yok. Sembolik yazımda = mevcut izni silip yenisini koyar. o= diğerlerinin her iznini kaldırır." },
-
-  { t:4, k:"tahmin", q:"Son komut ne yazar?",
-    cmd:"sleep 50 &\nsleep 60 &\njobs | wc -l",
-    opts:["0", "1", "2", "Komut satırı 50 saniye kilitlenir"], a:2,
-    why:"& ile iki iş de arka plana gider, komut satırı hemen döner. jobs iki satır listeler. Temizlemek için: kill %1 %2" },
-  { t:4, k:"tahmin", q:"Son komut ne yazar?",
-    cmd:"tar -czf yedek.tar.gz meyve.txt ogr.csv\nrm meyve.txt\ntar -xzf yedek.tar.gz\nls meyve.txt",
-    opts:["No such file or directory", "meyve.txt", "yedek.tar.gz", "meyve.txt.gz"], a:1,
-    why:"tar -c dosyaların kopyasını arşive koyar. rm sonrası -x ile arşivden açınca meyve.txt geri gelir. Yedeklemenin bütün mantığı bu." },
-  { t:4, k:"yaz", q:"Arka planda sleep 500 başlatın, PID'ini bulun ve o PID ile sonlandırın.",
-    check:"Son durumda jobs boş olmalı ya da Terminated yazmalı",
-    sol:["sleep 500 &\npgrep sleep        # ya da: jobs -l, ps aux | grep sleep\nkill <PID>"],
-    why:"& çıktısındaki [1] iş numarası, yanındaki sayı PID'dir. kill %1 de çalışır ama görev PID ile sonlandırmak. pkill sleep ise tüm sleep süreçlerini kapatır." }
+    why:"6=rw, 4=r, 0=yok. Sembolik yazımda = mevcut izni silip yenisini koyar. o= diğerlerinin her iznini kaldırır." }
 ];
 
 const S = { names:["",""], score:[0,0], i:0, picked:null, done:false, log:[] };
